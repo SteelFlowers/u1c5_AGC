@@ -8,9 +8,13 @@ import javax.swing.JScrollPane;
 import javax.swing.border.EmptyBorder;
 
 import controlador.logica_ventana;
+import controlador.Idiomas;
 
 import javax.swing.JLabel;
 import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.JCheckBox;
@@ -23,21 +27,20 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 import javax.swing.JProgressBar;
 import java.awt.BorderLayout;
+import java.awt.Color;
 
 public class ventana extends JFrame {
 
-	public JPanel contentPane; // Panel principal que contendrá todos los componentes de la interfaz.
-	public JTextField txt_nombres; // Campo de texto para ingresar nombres.
-	public JTextField txt_telefono; // Campo de texto para ingresar números de teléfono.
-	public JTextField txt_email; // Campo de texto para ingresar direcciones de correo electrónico.
-	public JTextField txt_buscar; // Campo de texto adicional.
-	public JCheckBox chb_favorito; // Casilla de verificación para marcar un contacto como favorito.
-	public JComboBox cmb_categoria; // Menú desplegable para seleccionar la categoría de contacto.
-	public JButton btn_add; // Botón para agregar un nuevo contacto.
-	public JButton btn_modificar; // Botón para modificar un contacto existente.
-	public JButton btn_eliminar; // Botón para eliminar un contacto.
-	public JList lst_contactos; // Lista para mostrar los contactos.
-	public JScrollPane scrLista; // Panel de desplazamiento para la lista de contactos.
+	public JPanel contentPane;
+	public JTextField txt_nombres;
+	public JTextField txt_telefono;
+	public JTextField txt_email;
+	public JTextField txt_buscar;
+	public JCheckBox chb_favorito;
+	public JComboBox cmb_categoria;
+	public JButton btn_add;
+	public JButton btn_modificar;
+	public JButton btn_eliminar;
 
 	public JTabbedPane tabbedPane;
 	public JTable tabla_contactos;
@@ -50,21 +53,27 @@ public class ventana extends JFrame {
 	public JLabel lbl_total_amigos;
 	public JLabel lbl_total_trabajo;
 	public JButton btn_exportar;
+	public JComboBox cmb_idioma;
+	public JLabel lbl_etiqueta1;
+	public JLabel lbl_etiqueta2;
+	public JLabel lbl_etiqueta3;
+	public JLabel lbl_etiqueta4;
+	public JLabel lbl_idioma_label;
+	public JLabel lbl_titulo_stats;
+	public JLabel lbl_stats_1;
+	public JLabel lbl_stats_2;
+	public JLabel lbl_stats_3;
 
 	/**
 	 * Launch the application.
 	 */
 	public static void main(String[] args) {
-		 // Invoca el método invokeLater de la clase EventQueue para ejecutar la creación de la interfaz de usuario en un hilo de despacho de eventos (Event Dispatch Thread).
-	    EventQueue.invokeLater(new Runnable() {
+		 EventQueue.invokeLater(new Runnable() {
 	        public void run() {
 	            try {
-	                // Dentro de este método, se crea una instancia de la clase ventana, que es la ventana principal de la aplicación.
 	                ventana frame = new ventana();
-	                // Establece la visibilidad de la ventana como verdadera, lo que hace que la ventana sea visible para el usuario.
 	                frame.setVisible(true);
 	            } catch (Exception e) {
-	                // En caso de que ocurra una excepción durante la creación o visualización de la ventana, se imprime la traza de la pila de la excepción.
 	                e.printStackTrace();
 	            }
 	        }
@@ -75,182 +84,375 @@ public class ventana extends JFrame {
 	 * Create the frame.
 	 */
 	public ventana() {
-		setTitle("GESTION DE CONTACTOS"); // Establece el título de la ventana.
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Define el comportamiento al cerrar la ventana.
-		setResizable(false); // Evita que la ventana sea redimensionable.
-		setBounds(100, 100, 1026, 748); // Establece el tamaño y la posición inicial de la ventana.
-		contentPane = new JPanel(); // Crea un nuevo panel de contenido.
-		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5)); // Establece un borde vacío alrededor del panel.
+		setTitle(Idiomas.obtener("ventana.titulo"));
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setResizable(true);
+		setBounds(100, 100, 1026, 748);
+		setMinimumSize(new java.awt.Dimension(800, 600));
+		contentPane = new JPanel();
+		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 
-		setContentPane(contentPane); // Establece el panel de contenido como el panel principal de la ventana.
+		setContentPane(contentPane);
 		contentPane.setLayout(new BorderLayout());
 
 		tabbedPane = new JTabbedPane();
+		tabbedPane.setBackground(Color.WHITE);
 		contentPane.add(tabbedPane, BorderLayout.CENTER);
 
+		// ======================== PANEL CONTACTOS ========================
 		JPanel panelContactos = new JPanel();
-		panelContactos.setLayout(null);
-		
-		// Creación y configuración de etiquetas para los campos de entrada.
-		JLabel lbl_etiqueta1 = new JLabel("NOMBRES:"); // Etiqueta para nombres.
-		lbl_etiqueta1.setBounds(25, 41, 89, 13); // Define la posición y tamaño de la etiqueta.
-		lbl_etiqueta1.setFont(new Font("Tahoma", Font.BOLD, 15)); // Configura la fuente de la etiqueta.
-		panelContactos.add(lbl_etiqueta1); // Agrega la etiqueta al panel de contenido.
+		panelContactos.setLayout(new BorderLayout());
+		panelContactos.setBackground(Color.WHITE);
 
-		JLabel lbl_etiqueta2 = new JLabel("TELEFONO:");
-		lbl_etiqueta2.setBounds(25, 80, 89, 13);
+		// Panel de Entrada (Norte)
+		JPanel panelEntrada = new JPanel();
+		panelEntrada.setBackground(new Color(77, 82, 100));
+		panelEntrada.setLayout(new GridBagLayout());
+		GridBagConstraints gbc;
+
+		lbl_etiqueta1 = new JLabel(Idiomas.obtener("label.nombres"));
+		lbl_etiqueta1.setFont(new Font("Tahoma", Font.BOLD, 15));
+		lbl_etiqueta1.setForeground(Color.WHITE);
+		gbc = new GridBagConstraints();
+		gbc.gridx = 0;
+		gbc.gridy = 0;
+		gbc.insets = new Insets(15, 15, 10, 10);
+		gbc.anchor = GridBagConstraints.WEST;
+		panelEntrada.add(lbl_etiqueta1, gbc);
+
+		txt_nombres = new JTextField();
+		txt_nombres.setFont(new Font("Tahoma", Font.PLAIN, 15));
+		txt_nombres.setColumns(30);
+		gbc = new GridBagConstraints();
+		gbc.gridx = 1;
+		gbc.gridy = 0;
+		gbc.insets = new Insets(15, 5, 10, 5);
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.weightx = 1.0;
+		panelEntrada.add(txt_nombres, gbc);
+
+		lbl_etiqueta2 = new JLabel(Idiomas.obtener("label.telefono"));
 		lbl_etiqueta2.setFont(new Font("Tahoma", Font.BOLD, 15));
-		panelContactos.add(lbl_etiqueta2);
-
-		JLabel lbl_etiqueta3 = new JLabel("EMAIL:");
-		lbl_etiqueta3.setBounds(25, 122, 89, 13);
-		lbl_etiqueta3.setFont(new Font("Tahoma", Font.BOLD, 15));
-		panelContactos.add(lbl_etiqueta3);
-
-		JLabel lbl_etiqueta4 = new JLabel("BUSCAR POR NOMBRE:");
-		lbl_etiqueta4.setFont(new Font("Tahoma", Font.BOLD, 15));
-		lbl_etiqueta4.setBounds(25, 661, 192, 13);
-		panelContactos.add(lbl_etiqueta4);
-		
-		// Creación y configuración de campos de texto para ingresar nombres, teléfonos y correos electrónicos.
-		txt_nombres = new JTextField(); // Campo de texto para nombres.
-		txt_nombres.setBounds(124, 28, 427, 31); // Define la posición y tamaño del campo de texto.
-		txt_nombres.setFont(new Font("Tahoma", Font.PLAIN, 15)); // Configura la fuente del campo de texto.
-		panelContactos.add(txt_nombres); // Agrega el campo de texto al panel de contenido.
-		txt_nombres.setColumns(10); // Establece el número de columnas para el campo de texto.
+		lbl_etiqueta2.setForeground(Color.WHITE);
+		gbc = new GridBagConstraints();
+		gbc.gridx = 0;
+		gbc.gridy = 1;
+		gbc.insets = new Insets(5, 15, 10, 10);
+		gbc.anchor = GridBagConstraints.WEST;
+		panelEntrada.add(lbl_etiqueta2, gbc);
 
 		txt_telefono = new JTextField();
-		txt_telefono.setBounds(124, 69, 427, 31);
 		txt_telefono.setFont(new Font("Tahoma", Font.PLAIN, 15));
-		txt_telefono.setColumns(10);
-		panelContactos.add(txt_telefono);
+		txt_telefono.setColumns(30);
+		gbc = new GridBagConstraints();
+		gbc.gridx = 1;
+		gbc.gridy = 1;
+		gbc.insets = new Insets(5, 5, 10, 5);
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.weightx = 1.0;
+		panelEntrada.add(txt_telefono, gbc);
+
+		lbl_etiqueta3 = new JLabel(Idiomas.obtener("label.email"));
+		lbl_etiqueta3.setFont(new Font("Tahoma", Font.BOLD, 15));
+		lbl_etiqueta3.setForeground(Color.WHITE);
+		gbc = new GridBagConstraints();
+		gbc.gridx = 0;
+		gbc.gridy = 2;
+		gbc.insets = new Insets(5, 15, 10, 10);
+		gbc.anchor = GridBagConstraints.WEST;
+		panelEntrada.add(lbl_etiqueta3, gbc);
 
 		txt_email = new JTextField();
-		txt_email.setBounds(124, 110, 427, 31);
 		txt_email.setFont(new Font("Tahoma", Font.PLAIN, 15));
-		txt_email.setColumns(10);
-		panelContactos.add(txt_email);
+		txt_email.setColumns(30);
+		gbc = new GridBagConstraints();
+		gbc.gridx = 1;
+		gbc.gridy = 2;
+		gbc.insets = new Insets(5, 5, 10, 5);
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.weightx = 1.0;
+		panelEntrada.add(txt_email, gbc);
 
-		txt_buscar = new JTextField();
-		txt_buscar.setFont(new Font("Tahoma", Font.PLAIN, 15));
-		txt_buscar.setColumns(10);
-		txt_buscar.setBounds(212, 650, 784, 31);
-		panelContactos.add(txt_buscar);
-		
-		// Creación y configuración de una casilla de verificación para indicar si un contacto es favorito.
-		chb_favorito = new JCheckBox("CONTACTO FAVORITO"); // Casilla de verificación.
-		chb_favorito.setBounds(24, 170, 193, 21); // Define la posición y tamaño de la casilla de verificación.
-		chb_favorito.setFont(new Font("Tahoma", Font.PLAIN, 15)); // Configura la fuente de la casilla de verificación.
-		panelContactos.add(chb_favorito); // Agrega la casilla de verificación al panel de contenido.
+		// Favorito y Categoría
+		chb_favorito = new JCheckBox(Idiomas.obtener("label.favorito"));
+		chb_favorito.setFont(new Font("Tahoma", Font.PLAIN, 15));
+		chb_favorito.setForeground(Color.WHITE);
+		chb_favorito.setBackground(new Color(77, 82, 100));
+		gbc = new GridBagConstraints();
+		gbc.gridx = 0;
+		gbc.gridy = 3;
+		gbc.insets = new Insets(5, 15, 15, 10);
+		gbc.anchor = GridBagConstraints.WEST;
+		panelEntrada.add(chb_favorito, gbc);
 
+		cmb_categoria = new JComboBox();
+		cmb_categoria.setFont(new Font("Tahoma", Font.PLAIN, 14));
+		gbc = new GridBagConstraints();
+		gbc.gridx = 1;
+		gbc.gridy = 3;
+		gbc.insets = new Insets(5, 5, 15, 5);
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.weightx = 1.0;
+		panelEntrada.add(cmb_categoria, gbc);
 
-		cmb_categoria = new JComboBox(); // Crea un nuevo JComboBox para permitir la selección de categorías.
-		cmb_categoria.setBounds(300, 167, 251, 31); // Establece la posición y el tamaño del JComboBox en el panel.
-		panelContactos.add(cmb_categoria); // Agrega el JComboBox al panel de contenido.
+		// Idioma (arriba a la derecha)
+		lbl_idioma_label = new JLabel("IDIOMA:");
+		lbl_idioma_label.setFont(new Font("Tahoma", Font.BOLD, 12));
+		lbl_idioma_label.setForeground(Color.WHITE);
+		gbc = new GridBagConstraints();
+		gbc.gridx = 2;
+		gbc.gridy = 0;
+		gbc.insets = new Insets(15, 10, 10, 5);
+		gbc.anchor = GridBagConstraints.WEST;
+		panelEntrada.add(lbl_idioma_label, gbc);
 
-		// Arreglo que contiene las categorías disponibles.
-		String[] categorias = {"Elija una Categoria", "Familia", "Amigos", "Trabajo"};
+		cmb_idioma = new JComboBox();
+		cmb_idioma.setFont(new Font("Tahoma", Font.PLAIN, 12));
+		cmb_idioma.addItem("Espanol");
+		cmb_idioma.addItem("English");
+		cmb_idioma.addItem("Francais");
+		cmb_idioma.setSelectedIndex(0);
+		gbc = new GridBagConstraints();
+		gbc.gridx = 2;
+		gbc.gridy = 1;
+		gbc.insets = new Insets(5, 10, 10, 15);
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.weightx = 0.3;
+		panelEntrada.add(cmb_idioma, gbc);
+
+		// Botones de acción (debajo del formulario - se adaptan al tamaño)
+		btn_add = new JButton(Idiomas.obtener("btn.agregar"));
+		btn_add.setFont(new Font("Tahoma", Font.BOLD, 14));
+		btn_add.setBackground(new Color(52, 232, 86));
+		btn_add.setForeground(Color.WHITE);
+		btn_add.setFocusPainted(false);
+		btn_add.setOpaque(true);
+		btn_add.setBorderPainted(false);
+		gbc = new GridBagConstraints();
+		gbc.gridx = 0;
+		gbc.gridy = 4;
+		gbc.insets = new Insets(20, 15, 15, 5);
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.weightx = 0.33;
+		panelEntrada.add(btn_add, gbc);
+
+		btn_modificar = new JButton(Idiomas.obtener("btn.modificar"));
+		btn_modificar.setFont(new Font("Tahoma", Font.BOLD, 14));
+		btn_modificar.setBackground(new Color(52, 84, 232));
+		btn_modificar.setForeground(Color.WHITE);
+		btn_modificar.setFocusPainted(false);
+		btn_modificar.setOpaque(true);
+		btn_modificar.setBorderPainted(false);
+		gbc = new GridBagConstraints();
+		gbc.gridx = 1;
+		gbc.gridy = 4;
+		gbc.insets = new Insets(20, 5, 15, 5);
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.weightx = 0.33;
+		panelEntrada.add(btn_modificar, gbc);
+
+		btn_eliminar = new JButton(Idiomas.obtener("btn.eliminar"));
+		btn_eliminar.setFont(new Font("Tahoma", Font.BOLD, 14));
+		btn_eliminar.setBackground(new Color(227, 51, 82));
+		btn_eliminar.setForeground(Color.WHITE);
+		btn_eliminar.setFocusPainted(false);
+		btn_eliminar.setOpaque(true);
+		btn_eliminar.setBorderPainted(false);
+		gbc = new GridBagConstraints();
+		gbc.gridx = 2;
+		gbc.gridy = 4;
+		gbc.insets = new Insets(20, 5, 15, 5);
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.weightx = 0.33;
+		panelEntrada.add(btn_eliminar, gbc);
+
+		String[] categorias = {Idiomas.obtener("categoria.elija"), Idiomas.obtener("categoria.familia"), Idiomas.obtener("categoria.amigos"), Idiomas.obtener("categoria.trabajo")};
 		for (String categoria : categorias) {
-		    // Agrega cada categoría al JComboBox.
 		    cmb_categoria.addItem(categoria);
 		}
 
-		btn_add = new JButton("AGREGAR"); // Crea un nuevo botón con el texto "AGREGAR".
-		btn_add.setFont(new Font("Tahoma", Font.PLAIN, 15)); // Configura la fuente del botón.
-		btn_add.setBounds(601, 70, 125, 65); // Establece la posición y el tamaño del botón en el panel.
-		panelContactos.add(btn_add); // Agrega el botón al panel de contenido.
+		// Panel Búsqueda
+		JPanel panelBusqueda = new JPanel();
+		panelBusqueda.setBackground(Color.WHITE);
+		panelBusqueda.setLayout(new BorderLayout());
+		panelBusqueda.setBorder(new EmptyBorder(10, 10, 10, 10));
 
-		btn_modificar = new JButton("MODIFICAR");
-		btn_modificar.setFont(new Font("Tahoma", Font.PLAIN, 15));
-		btn_modificar.setBounds(736, 70, 125, 65);
-		panelContactos.add(btn_modificar);
+		lbl_etiqueta4 = new JLabel(Idiomas.obtener("label.buscar"));
+		lbl_etiqueta4.setFont(new Font("Tahoma", Font.BOLD, 15));
+		lbl_etiqueta4.setForeground(new Color(52, 84, 232));
+		panelBusqueda.add(lbl_etiqueta4, BorderLayout.WEST);
 
-		btn_eliminar = new JButton("ELIMINAR");
-		btn_eliminar.setFont(new Font("Tahoma", Font.PLAIN, 15));
-		btn_eliminar.setBounds(871, 69, 125, 65);
-		panelContactos.add(btn_eliminar);
-		
-		lst_contactos = new JList(); // Crea una nueva JList para mostrar la lista de contactos.
-		lst_contactos.setFont(new Font("Tahoma", Font.PLAIN, 15)); // Configura la fuente de la JList.
-		lst_contactos.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); // Establece el modo de selección a un solo elemento.
-		lst_contactos.setBounds(25, 242, 971, 150); // Establece la posición y el tamaño de la JList en el panel.
+		JPanel panelBuscadorCampo = new JPanel();
+		panelBuscadorCampo.setBackground(Color.WHITE);
+		panelBuscadorCampo.setLayout(new BorderLayout(5, 0));
 
-		scrLista = new JScrollPane(lst_contactos); // Crea un JScrollPane para permitir el desplazamiento de la JList.
-		scrLista.setBounds(25, 242, 971, 150); // Establece la posición y el tamaño del JScrollPane en el panel.
-		panelContactos.add(scrLista); // Agrega el JScrollPane al panel de contenido.
+		txt_buscar = new JTextField();
+		txt_buscar.setFont(new Font("Tahoma", Font.PLAIN, 15));
+		panelBuscadorCampo.add(txt_buscar, BorderLayout.CENTER);
 
-		String[] columnas = {"Nombre", "Teléfono", "Email", "Categoría", "Favorito"};
+		JButton btn_buscar = new JButton("Buscar");
+		btn_buscar.setFont(new Font("Tahoma", Font.BOLD, 13));
+		btn_buscar.setBackground(new Color(253, 142, 41));
+		btn_buscar.setForeground(Color.WHITE);
+		btn_buscar.setFocusPainted(false);
+		btn_buscar.setOpaque(true);
+		btn_buscar.setBorderPainted(false);
+		btn_buscar.setPreferredSize(new java.awt.Dimension(50, 31));
+		panelBuscadorCampo.add(btn_buscar, BorderLayout.EAST);
+
+		panelBusqueda.add(panelBuscadorCampo, BorderLayout.CENTER);
+
+		// Panel Superior que contiene ENTRADA y BÚSQUEDA
+		JPanel panelSuperior = new JPanel(new BorderLayout());
+		panelSuperior.setBackground(Color.WHITE);
+		panelSuperior.add(panelEntrada, BorderLayout.NORTH);
+		panelSuperior.add(panelBusqueda, BorderLayout.SOUTH);
+
+		panelContactos.add(panelSuperior, BorderLayout.NORTH);
+
+		// Tabla (Centro)
+		String[] columnas = {Idiomas.obtener("tabla.nombre"), Idiomas.obtener("tabla.telefono"), Idiomas.obtener("tabla.email"), Idiomas.obtener("tabla.categoria"), Idiomas.obtener("tabla.favorito")};
 		modeloTabla = new DefaultTableModel(columnas, 0);
 		tabla_contactos = new JTable(modeloTabla);
 		tabla_contactos.setAutoCreateRowSorter(true);
-		JScrollPane scrollTabla = new JScrollPane(tabla_contactos);
-		scrollTabla.setBounds(25, 410, 971, 200);
-		panelContactos.add(scrollTabla);
+		tabla_contactos.setFont(new Font("Tahoma", Font.PLAIN, 13));
+		tabla_contactos.getTableHeader().setFont(new Font("Tahoma", Font.BOLD, 14));
+		tabla_contactos.setRowHeight(25);
 
+		JScrollPane scrollTabla = new JScrollPane(tabla_contactos);
+		JPanel panelTabla = new JPanel(new BorderLayout());
+		panelTabla.setBorder(new EmptyBorder(5, 10, 5, 10));
+		panelTabla.add(scrollTabla, BorderLayout.CENTER);
+
+		panelContactos.add(panelTabla, BorderLayout.CENTER);
+
+		// Barra de Progreso (Sur)
 		barraProgreso = new JProgressBar();
-		barraProgreso.setBounds(25, 620, 971, 25);
 		barraProgreso.setStringPainted(true);
 		barraProgreso.setVisible(false);
-		panelContactos.add(barraProgreso);
+		JPanel panelProgreso = new JPanel(new BorderLayout());
+		panelProgreso.setBorder(new EmptyBorder(5, 10, 10, 10));
+		panelProgreso.add(barraProgreso, BorderLayout.CENTER);
+		panelContactos.add(panelProgreso, BorderLayout.SOUTH);
 
-		tabbedPane.addTab("Contactos", panelContactos);
+		tabbedPane.addTab(Idiomas.obtener("pestana.contactos"), panelContactos);
 
+		// ======================== PANEL ESTADÍSTICAS ========================
 		JPanel panelEstadisticas = new JPanel();
-		panelEstadisticas.setLayout(null);
+		panelEstadisticas.setBackground(Color.WHITE);
+		panelEstadisticas.setLayout(new GridBagLayout());
 
-		JLabel lblTitulo = new JLabel("ESTADISTICAS DE CONTACTOS");
-		lblTitulo.setFont(new Font("Tahoma", Font.BOLD, 18));
-		lblTitulo.setBounds(300, 30, 400, 30);
-		panelEstadisticas.add(lblTitulo);
+		lbl_titulo_stats = new JLabel(Idiomas.obtener("titulo.estadisticas"));
+		lbl_titulo_stats.setFont(new Font("Tahoma", Font.BOLD, 18));
+		lbl_titulo_stats.setForeground(new Color(52, 84, 232));
+		gbc = new GridBagConstraints();
+		gbc.gridx = 0;
+		gbc.gridy = 0;
+		gbc.gridwidth = 2;
+		gbc.insets = new Insets(20, 0, 30, 0);
+		panelEstadisticas.add(lbl_titulo_stats, gbc);
 
-		JLabel lbl1 = new JLabel("Total de contactos:");
-		lbl1.setFont(new Font("Tahoma", Font.PLAIN, 14));
-		lbl1.setBounds(200, 100, 200, 25);
-		panelEstadisticas.add(lbl1);
+		lbl_stats_1 = new JLabel(Idiomas.obtener("label.total.contactos"));
+		lbl_stats_1.setFont(new Font("Tahoma", Font.BOLD, 15));
+		gbc = new GridBagConstraints();
+		gbc.gridx = 0;
+		gbc.gridy = 1;
+		gbc.insets = new Insets(10, 50, 10, 10);
+		gbc.anchor = GridBagConstraints.WEST;
+		panelEstadisticas.add(lbl_stats_1, gbc);
 
 		lbl_total_contactos = new JLabel("0");
-		lbl_total_contactos.setFont(new Font("Tahoma", Font.BOLD, 24));
-		lbl_total_contactos.setBounds(450, 95, 100, 30);
-		panelEstadisticas.add(lbl_total_contactos);
+		lbl_total_contactos.setFont(new Font("Tahoma", Font.BOLD, 28));
+		lbl_total_contactos.setForeground(new Color(52, 84, 232));
+		gbc = new GridBagConstraints();
+		gbc.gridx = 1;
+		gbc.gridy = 1;
+		gbc.insets = new Insets(10, 10, 10, 50);
+		gbc.anchor = GridBagConstraints.WEST;
+		panelEstadisticas.add(lbl_total_contactos, gbc);
 
-		JLabel lbl2 = new JLabel("Contactos favoritos:");
-		lbl2.setFont(new Font("Tahoma", Font.PLAIN, 14));
-		lbl2.setBounds(200, 150, 200, 25);
-		panelEstadisticas.add(lbl2);
+		lbl_stats_2 = new JLabel(Idiomas.obtener("label.total.favoritos"));
+		lbl_stats_2.setFont(new Font("Tahoma", Font.BOLD, 15));
+		gbc = new GridBagConstraints();
+		gbc.gridx = 0;
+		gbc.gridy = 2;
+		gbc.insets = new Insets(10, 50, 10, 10);
+		gbc.anchor = GridBagConstraints.WEST;
+		panelEstadisticas.add(lbl_stats_2, gbc);
 
 		lbl_total_favoritos = new JLabel("0");
-		lbl_total_favoritos.setFont(new Font("Tahoma", Font.BOLD, 24));
-		lbl_total_favoritos.setBounds(450, 145, 100, 30);
-		panelEstadisticas.add(lbl_total_favoritos);
+		lbl_total_favoritos.setFont(new Font("Tahoma", Font.BOLD, 28));
+		lbl_total_favoritos.setForeground(new Color(52, 232, 86));
+		gbc = new GridBagConstraints();
+		gbc.gridx = 1;
+		gbc.gridy = 2;
+		gbc.insets = new Insets(10, 10, 10, 50);
+		gbc.anchor = GridBagConstraints.WEST;
+		panelEstadisticas.add(lbl_total_favoritos, gbc);
 
-		JLabel lbl3 = new JLabel("Por categoría:");
-		lbl3.setFont(new Font("Tahoma", Font.BOLD, 14));
-		lbl3.setBounds(200, 220, 200, 25);
-		panelEstadisticas.add(lbl3);
+		lbl_stats_3 = new JLabel(Idiomas.obtener("label.categoria.info"));
+		lbl_stats_3.setFont(new Font("Tahoma", Font.BOLD, 15));
+		lbl_stats_3.setForeground(new Color(253, 142, 41));
+		gbc = new GridBagConstraints();
+		gbc.gridx = 0;
+		gbc.gridy = 3;
+		gbc.gridwidth = 2;
+		gbc.insets = new Insets(20, 0, 15, 0);
+		panelEstadisticas.add(lbl_stats_3, gbc);
 
-		lbl_total_familia = new JLabel("Familia: 0");
-		lbl_total_familia.setFont(new Font("Tahoma", Font.PLAIN, 13));
-		lbl_total_familia.setBounds(230, 255, 200, 25);
-		panelEstadisticas.add(lbl_total_familia);
+		lbl_total_familia = new JLabel(Idiomas.obtener("label.familia") + " 0");
+		lbl_total_familia.setFont(new Font("Tahoma", Font.PLAIN, 14));
+		gbc = new GridBagConstraints();
+		gbc.gridx = 0;
+		gbc.gridy = 4;
+		gbc.gridwidth = 2;
+		gbc.insets = new Insets(5, 80, 5, 10);
+		gbc.anchor = GridBagConstraints.WEST;
+		panelEstadisticas.add(lbl_total_familia, gbc);
 
-		lbl_total_amigos = new JLabel("Amigos: 0");
-		lbl_total_amigos.setFont(new Font("Tahoma", Font.PLAIN, 13));
-		lbl_total_amigos.setBounds(230, 285, 200, 25);
-		panelEstadisticas.add(lbl_total_amigos);
+		lbl_total_amigos = new JLabel(Idiomas.obtener("label.amigos") + " 0");
+		lbl_total_amigos.setFont(new Font("Tahoma", Font.PLAIN, 14));
+		gbc = new GridBagConstraints();
+		gbc.gridx = 0;
+		gbc.gridy = 5;
+		gbc.gridwidth = 2;
+		gbc.insets = new Insets(5, 80, 5, 10);
+		gbc.anchor = GridBagConstraints.WEST;
+		panelEstadisticas.add(lbl_total_amigos, gbc);
 
-		lbl_total_trabajo = new JLabel("Trabajo: 0");
-		lbl_total_trabajo.setFont(new Font("Tahoma", Font.PLAIN, 13));
-		lbl_total_trabajo.setBounds(230, 315, 200, 25);
-		panelEstadisticas.add(lbl_total_trabajo);
+		lbl_total_trabajo = new JLabel(Idiomas.obtener("label.trabajo") + " 0");
+		lbl_total_trabajo.setFont(new Font("Tahoma", Font.PLAIN, 14));
+		gbc = new GridBagConstraints();
+		gbc.gridx = 0;
+		gbc.gridy = 6;
+		gbc.gridwidth = 2;
+		gbc.insets = new Insets(5, 80, 30, 10);
+		gbc.anchor = GridBagConstraints.WEST;
+		panelEstadisticas.add(lbl_total_trabajo, gbc);
 
-		btn_exportar = new JButton("Exportar a CSV");
-		btn_exportar.setFont(new Font("Tahoma", Font.PLAIN, 14));
-		btn_exportar.setBounds(350, 400, 200, 40);
-		panelEstadisticas.add(btn_exportar);
+		btn_exportar = new JButton(Idiomas.obtener("btn.exportar"));
+		btn_exportar.setFont(new Font("Tahoma", Font.BOLD, 14));
+		btn_exportar.setBackground(new Color(52, 84, 232));
+		btn_exportar.setForeground(Color.WHITE);
+		btn_exportar.setFocusPainted(false);
+		btn_exportar.setOpaque(true);
+		btn_exportar.setBorderPainted(false);
+		btn_exportar.setPreferredSize(new java.awt.Dimension(180, 40));
+		gbc = new GridBagConstraints();
+		gbc.gridx = 0;
+		gbc.gridy = 7;
+		gbc.gridwidth = 2;
+		gbc.insets = new Insets(10, 0, 20, 0);
+		panelEstadisticas.add(btn_exportar, gbc);
 
-		tabbedPane.addTab("Estadísticas", panelEstadisticas);
-		
-		//Instanciar el controlador para usar el delegado
+		gbc = new GridBagConstraints();
+		gbc.gridx = 0;
+		gbc.gridy = 8;
+		gbc.weighty = 1.0;
+		panelEstadisticas.add(new JPanel(), gbc);
+
+		tabbedPane.addTab(Idiomas.obtener("pestana.estadisticas"), panelEstadisticas);
+
 		logica_ventana lv=new logica_ventana(this);
 	}
 }

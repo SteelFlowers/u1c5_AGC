@@ -20,6 +20,7 @@ import javax.swing.Action;
 import java.awt.event.InputEvent;
 
 import javax.swing.DefaultListModel;
+import javax.swing.table.DefaultTableModel;
 import javax.swing.JComboBox;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
@@ -41,6 +42,8 @@ public class logica_ventana implements ActionListener, ListSelectionListener, It
 	private List<persona> contactos; // Lista de objetos persona que representa todos los contactos.
 	private boolean favorito = false; // Booleano que indica si un contacto es favorito.
 	private JPopupMenu menuContextual;
+	private boolean enModoEdicion = false;
+	private int filaPendienteDeModificar = -1;
 
 	// Constructor que inicializa la clase y configura los escuchadores de eventos para los componentes de la GUI.
 	public logica_ventana(ventana delegado) {
@@ -53,11 +56,10 @@ public class logica_ventana implements ActionListener, ListSelectionListener, It
 	    this.delegado.btn_eliminar.addActionListener(this);
 	    this.delegado.btn_modificar.addActionListener(this);
 	    this.delegado.btn_exportar.addActionListener(this);
-	    // Registra los ListSelectionListener para la lista de contactos.
-	    this.delegado.lst_contactos.addListSelectionListener(this);
 	    // Registra los ItemListener para el JComboBox de categoría y el JCheckBox de favoritos.
 	    this.delegado.cmb_categoria.addItemListener(this);
 	    this.delegado.chb_favorito.addItemListener(this);
+	    this.delegado.cmb_idioma.addItemListener(this);
 
 	    this.delegado.txt_buscar.addKeyListener(new KeyAdapter() {
 	        public void keyReleased(KeyEvent e) {
@@ -93,13 +95,6 @@ public class logica_ventana implements ActionListener, ListSelectionListener, It
 
 		        // Lee los contactos almacenados utilizando una instancia de personaDAO.
 		        contactos = new personaDAO(new persona()).leerArchivo();
-		        DefaultListModel modelo = new DefaultListModel();
-		        // Agrega cada contacto al modelo de la lista de contactos de la GUI.
-		        for (persona contacto : contactos) {
-		            modelo.addElement(contacto.formatoLista());
-		        }
-		        // Establece el modelo actualizado en la lista de contactos de la GUI.
-		        delegado.lst_contactos.setModel(modelo);
 		        delegado.barraProgreso.setValue(50);
 
 		        cargarTabla();
@@ -128,6 +123,12 @@ public class logica_ventana implements ActionListener, ListSelectionListener, It
 	    // Desmarca la casilla de favorito y establece la categoría por defecto.
 	    delegado.chb_favorito.setSelected(favorito);
 	    delegado.cmb_categoria.setSelectedIndex(0);
+	    // Cancela modo edición si está activo
+	    if (enModoEdicion) {
+	        enModoEdicion = false;
+	        filaPendienteDeModificar = -1;
+	        delegado.btn_modificar.setText(Idiomas.obtener("btn.modificar"));
+	    }
 	    // Reinicia las variables con los valores actuales de la GUI.
 	    incializacionCampos();
 	    // Recarga los contactos en la lista de contactos de la GUI.
@@ -169,19 +170,8 @@ public class logica_ventana implements ActionListener, ListSelectionListener, It
 	    }
 	}
 
-	// Método que maneja los eventos de selección en la lista de contactos.
 	@Override
 	public void valueChanged(ListSelectionEvent e) {
-		// Obtiene el índice del elemento seleccionado en la lista de contactos.
-	    int index = delegado.lst_contactos.getSelectedIndex();
-	    // Verifica si se ha seleccionado un índice válido en la lista.
-	    if (index != -1) {
-	        // Si el índice es mayor que cero (no se seleccionó la primera fila),
-	        // carga los detalles del contacto seleccionado.
-	        if (index > 0) {
-	            cargarContacto(index);
-	        }
-	    } 
 	}
 
 	// Método privado para cargar los datos del contacto seleccionado en los campos de la GUI.
@@ -210,6 +200,16 @@ public class logica_ventana implements ActionListener, ListSelectionListener, It
 	        // Verifica si el evento proviene del JCheckBox de favorito.
 	        favorito = delegado.chb_favorito.isSelected();
 	        // Obtiene el estado seleccionado del JCheckBox y actualiza el estado de favorito en la variable "favorito".
+	    } else if (e.getSource() == delegado.cmb_idioma) {
+	        int seleccionado = delegado.cmb_idioma.getSelectedIndex();
+	        if (seleccionado == 0) {
+	            Idiomas.cambiarAlEspanol();
+	        } else if (seleccionado == 1) {
+	            Idiomas.cambiarAlIngles();
+	        } else if (seleccionado == 2) {
+	            Idiomas.cambiarAlFrances();
+	        }
+	        actualizarInterfazIdioma();
 	    }
 	}
 
@@ -222,7 +222,7 @@ public class logica_ventana implements ActionListener, ListSelectionListener, It
 	                p.getTelefono(),
 	                p.getEmail(),
 	                p.getCategoria(),
-	                p.isFavorito() ? "Sí" : "No"
+	                p.isFavorito() ? "Si" : "No"
 	            };
 	            delegado.modeloTabla.addRow(fila);
 	        }
@@ -248,9 +248,9 @@ public class logica_ventana implements ActionListener, ListSelectionListener, It
 
 	    delegado.lbl_total_contactos.setText(String.valueOf(total));
 	    delegado.lbl_total_favoritos.setText(String.valueOf(favoritos));
-	    delegado.lbl_total_familia.setText("Familia: " + familia);
-	    delegado.lbl_total_amigos.setText("Amigos: " + amigos);
-	    delegado.lbl_total_trabajo.setText("Trabajo: " + trabajo);
+	    delegado.lbl_total_familia.setText(Idiomas.obtener("label.familia") + " " + familia);
+	    delegado.lbl_total_amigos.setText(Idiomas.obtener("label.amigos") + " " + amigos);
+	    delegado.lbl_total_trabajo.setText(Idiomas.obtener("label.trabajo") + " " + trabajo);
 	}
 
 	private void buscarContacto() {
@@ -267,7 +267,7 @@ public class logica_ventana implements ActionListener, ListSelectionListener, It
 	                    p.getTelefono(),
 	                    p.getEmail(),
 	                    p.getCategoria(),
-	                    p.isFavorito() ? "Sí" : "No"
+	                    p.isFavorito() ? "Si" : "No"
 	                };
 	                delegado.modeloTabla.addRow(fila);
 	            }
@@ -282,7 +282,7 @@ public class logica_ventana implements ActionListener, ListSelectionListener, It
 	        delegado.txt_telefono.setText(delegado.tabla_contactos.getValueAt(fila, 1).toString());
 	        delegado.txt_email.setText(delegado.tabla_contactos.getValueAt(fila, 2).toString());
 	        delegado.cmb_categoria.setSelectedItem(delegado.tabla_contactos.getValueAt(fila, 3).toString());
-	        delegado.chb_favorito.setSelected(delegado.tabla_contactos.getValueAt(fila, 4).toString().equals("Sí"));
+	        delegado.chb_favorito.setSelected(delegado.tabla_contactos.getValueAt(fila, 4).toString().equals("Si"));
 	    }
 	}
 
@@ -444,6 +444,8 @@ public class logica_ventana implements ActionListener, ListSelectionListener, It
 	            try {
 	                new personaDAO(new persona()).actualizarContactos(contactos);
 	                limpiarCampos();
+	                cargarTabla();
+	                actualizarEstadisticas();
 	                JOptionPane.showMessageDialog(delegado, "Contacto eliminado correctamente");
 	            } catch (IOException ex) {
 	                JOptionPane.showMessageDialog(delegado, "Error al eliminar el contacto: " + ex.getMessage());
@@ -455,13 +457,22 @@ public class logica_ventana implements ActionListener, ListSelectionListener, It
 	}
 
 	private void modificarContacto() {
-	    int fila = delegado.tabla_contactos.getSelectedRow();
-	    if (fila >= 0) {
+	    if (!enModoEdicion) {
+	        int fila = delegado.tabla_contactos.getSelectedRow();
+	        if (fila >= 0) {
+	            cargarContactoDesdeTabla();
+	            enModoEdicion = true;
+	            filaPendienteDeModificar = fila;
+	            delegado.btn_modificar.setText(Idiomas.obtener("btn.guardar"));
+	        } else {
+	            JOptionPane.showMessageDialog(delegado, "Seleccione un contacto de la tabla para modificar");
+	        }
+	    } else {
 	        incializacionCampos();
 
 	        if ((!nombres.equals("")) && (!telefono.equals("")) && (!email.equals(""))) {
 	            if ((!categoria.equals("Elija una Categoria")) && (!categoria.equals(""))) {
-	                String nombreOriginal = delegado.tabla_contactos.getValueAt(fila, 0).toString();
+	                String nombreOriginal = delegado.tabla_contactos.getValueAt(filaPendienteDeModificar, 0).toString();
 
 	                for (int i = 0; i < contactos.size(); i++) {
 	                    if (contactos.get(i).getNombre().equals(nombreOriginal)) {
@@ -476,7 +487,12 @@ public class logica_ventana implements ActionListener, ListSelectionListener, It
 
 	                try {
 	                    new personaDAO(new persona()).actualizarContactos(contactos);
+	                    enModoEdicion = false;
+	                    filaPendienteDeModificar = -1;
+	                    delegado.btn_modificar.setText(Idiomas.obtener("btn.modificar"));
 	                    limpiarCampos();
+	                    cargarTabla();
+	                    actualizarEstadisticas();
 	                    JOptionPane.showMessageDialog(delegado, "Contacto modificado correctamente");
 	                } catch (IOException ex) {
 	                    JOptionPane.showMessageDialog(delegado, "Error al modificar el contacto: " + ex.getMessage());
@@ -487,8 +503,59 @@ public class logica_ventana implements ActionListener, ListSelectionListener, It
 	        } else {
 	            JOptionPane.showMessageDialog(delegado, "Todos los campos deben ser llenados!!!");
 	        }
-	    } else {
-	        JOptionPane.showMessageDialog(delegado, "Seleccione un contacto de la tabla para modificar");
 	    }
+	}
+
+	private void actualizarInterfazIdioma() {
+		delegado.setTitle(Idiomas.obtener("ventana.titulo"));
+		delegado.tabbedPane.setTitleAt(0, Idiomas.obtener("pestana.contactos"));
+		delegado.tabbedPane.setTitleAt(1, Idiomas.obtener("pestana.estadisticas"));
+
+		// Actualizar etiquetas de entrada - Pestaña Contactos
+		delegado.lbl_etiqueta1.setText(Idiomas.obtener("label.nombres"));
+		delegado.lbl_etiqueta2.setText(Idiomas.obtener("label.telefono"));
+		delegado.lbl_etiqueta3.setText(Idiomas.obtener("label.email"));
+		delegado.lbl_etiqueta4.setText(Idiomas.obtener("label.buscar"));
+		delegado.lbl_idioma_label.setText("IDIOMA:");
+
+		// Actualizar botones
+		delegado.btn_add.setText(Idiomas.obtener("btn.agregar"));
+		delegado.btn_modificar.setText(Idiomas.obtener("btn.modificar"));
+		delegado.btn_eliminar.setText(Idiomas.obtener("btn.eliminar"));
+		delegado.btn_exportar.setText(Idiomas.obtener("btn.exportar"));
+
+		// Actualizar checkbox
+		delegado.chb_favorito.setText(Idiomas.obtener("label.favorito"));
+
+		// Actualizar tabla - Reconstruir modelo con nuevos encabezados
+		Object[] columnasActualizadas = {
+			Idiomas.obtener("tabla.nombre"),
+			Idiomas.obtener("tabla.telefono"),
+			Idiomas.obtener("tabla.email"),
+			Idiomas.obtener("tabla.categoria"),
+			Idiomas.obtener("tabla.favorito")
+		};
+		DefaultTableModel nuevoModelo = new DefaultTableModel(columnasActualizadas, 0);
+		delegado.modeloTabla = nuevoModelo;
+		delegado.tabla_contactos.setModel(nuevoModelo);
+
+		// Actualizar etiquetas - Pestaña Estadísticas
+		delegado.lbl_titulo_stats.setText(Idiomas.obtener("titulo.estadisticas"));
+		delegado.lbl_stats_1.setText(Idiomas.obtener("label.total.contactos"));
+		delegado.lbl_stats_2.setText(Idiomas.obtener("label.total.favoritos"));
+		delegado.lbl_stats_3.setText(Idiomas.obtener("label.categoria.info"));
+
+		// Actualizar ComboBox de categorías sin disparar ItemListener
+		delegado.cmb_categoria.removeItemListener(this);
+		delegado.cmb_categoria.removeAllItems();
+		delegado.cmb_categoria.addItem(Idiomas.obtener("categoria.elija"));
+		delegado.cmb_categoria.addItem(Idiomas.obtener("categoria.familia"));
+		delegado.cmb_categoria.addItem(Idiomas.obtener("categoria.amigos"));
+		delegado.cmb_categoria.addItem(Idiomas.obtener("categoria.trabajo"));
+		delegado.cmb_categoria.addItemListener(this);
+
+		// Recargar tabla con datos actuales
+		cargarTabla();
+		actualizarEstadisticas();
 	}
 }
