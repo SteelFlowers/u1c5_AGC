@@ -36,20 +36,19 @@ import modelo.*;
 
 //Definición de la clase logica_ventana que implementa tres interfaces para manejar eventos.
 public class logica_ventana implements ActionListener, ListSelectionListener, ItemListener {
-	private ventana delegado; // Referencia a la ventana principal que contiene la GUI.
-	private String nombres, email, telefono, categoria=""; // Variables para almacenar datos del contacto.
-	private persona persona; // Objeto de tipo persona, que representa un contacto.
-	private List<persona> contactos; // Lista de objetos persona que representa todos los contactos.
-	private boolean favorito = false; // Booleano que indica si un contacto es favorito.
+	private ventana delegado;
+	private String nombres, email, telefono, categoria="";
+	private persona persona;
+	private List<persona> contactos;
+	private boolean favorito = false;
 	private JPopupMenu menuContextual;
 	private boolean enModoEdicion = false;
 	private int filaPendienteDeModificar = -1;
+	private NotificadorUI notificador;
 
-	// Constructor que inicializa la clase y configura los escuchadores de eventos para los componentes de la GUI.
 	public logica_ventana(ventana delegado) {
-		  // Asigna la ventana recibida como parámetro a la variable de instancia delegado.
 	    this.delegado = delegado;
-	    // Carga los contactos almacenados al inicializar.
+	    this.notificador = new NotificadorUI(delegado);
 	    cargarContactosRegistrados(); 
 	    // Registra los ActionListener para los botones de la GUI.
 	    this.delegado.btn_add.addActionListener(this);
@@ -146,13 +145,29 @@ public class logica_ventana implements ActionListener, ListSelectionListener, It
 	        if ((!nombres.equals("")) && (!telefono.equals("")) && (!email.equals(""))) {
 	            // Verifica si se ha seleccionado una categoría válida.
 	            if ((!categoria.equals("Elija una Categoria")) && (!categoria.equals(""))) {
-	                // Crea un nuevo objeto persona con los datos ingresados y lo guarda.
 	                persona = new persona(nombres, telefono, email, categoria, favorito);
-	                new personaDAO(persona).escribirArchivo();
-	                // Limpia los campos después de agregar el contacto.
-	                limpiarCampos();
-	                // Muestra un mensaje de éxito.
-	                JOptionPane.showMessageDialog(delegado, "Contacto Registrado!!!");
+
+                // Validar en thread
+                ValidadorContactosThread validador = new ValidadorContactosThread(persona, contactos);
+                Thread hiloValidacion = new Thread(validador);
+                hiloValidacion.start();
+
+                try {
+                    hiloValidacion.join();
+
+                    if (validador.esDuplicado()) {
+                        JOptionPane.showMessageDialog(delegado,
+                            "Contacto duplicado:\n" + validador.getMensajeDuplicado(),
+                            "Error",
+                            JOptionPane.WARNING_MESSAGE);
+                    } else {
+                        new personaDAO(persona).escribirArchivo();
+                        limpiarCampos();
+                        notificador.notificacionExito("Exito", "Contacto Registrado");
+                    }
+                } catch (InterruptedException ex) {
+                    JOptionPane.showMessageDialog(delegado, "Error: " + ex.getMessage());
+                }
 	            } else {
 	                // Muestra un mensaje de advertencia si no se ha seleccionado una categoría válida.
 	                JOptionPane.showMessageDialog(delegado, "Elija una Categoria!!!");
@@ -254,25 +269,18 @@ public class logica_ventana implements ActionListener, ListSelectionListener, It
 	}
 
 	private void buscarContacto() {
-	    String busqueda = delegado.txt_buscar.getText().toLowerCase();
-	    delegado.modeloTabla.setRowCount(0);
+	    String busqueda = delegado.txt_buscar.getText();
 
-	    for (persona p : contactos) {
-	        if (!p.getNombre().equals("NOMBRE")) {
-	            if (p.getNombre().toLowerCase().contains(busqueda) ||
-	                p.getTelefono().contains(busqueda) ||
-	                p.getEmail().toLowerCase().contains(busqueda)) {
-	                Object[] fila = {
-	                    p.getNombre(),
-	                    p.getTelefono(),
-	                    p.getEmail(),
-	                    p.getCategoria(),
-	                    p.isFavorito() ? "Si" : "No"
-	                };
-	                delegado.modeloTabla.addRow(fila);
-	            }
-	        }
-	    }
+	    // Crea un SwingWorker para buscar en segundo plano
+	    BuscadorContactosWorker buscador = new BuscadorContactosWorker(
+	        contactos,
+	        busqueda,
+	        delegado.modeloTabla,
+	        delegado
+	    );
+
+	    // Ejecuta la búsqueda en thread separado (no bloquea UI)
+	    buscador.execute();
 	}
 
 	private void cargarContactoDesdeTabla() {
@@ -297,18 +305,20 @@ public class logica_ventana implements ActionListener, ListSelectionListener, It
 	            ruta += ".csv";
 	        }
 
+	        // Exportar en thread
+	        ExportadorContactosThread exportador = new ExportadorContactosThread(contactos, ruta);
+	        exportador.start();
+
 	        try {
-	            java.io.FileWriter fw = new java.io.FileWriter(ruta);
-	            fw.write("Nombre,Teléfono,Email,Categoría,Favorito\n");
-	            for (persona p : contactos) {
-	                if (!p.getNombre().equals("NOMBRE")) {
-	                    fw.write(p.datosContacto().replace(";", ",") + "\n");
-	                }
+	            exportador.join();
+
+	            if (exportador.esExitoso()) {
+	                notificador.notificacionExito("Exito", exportador.getMensaje());
+	            } else {
+	                notificador.notificacionError("Error", exportador.getMensaje());
 	            }
-	            fw.close();
-	            JOptionPane.showMessageDialog(delegado, "Archivo exportado correctamente");
-	        } catch (Exception ex) {
-	            JOptionPane.showMessageDialog(delegado, "Error al exportar: " + ex.getMessage());
+	        } catch (InterruptedException ex) {
+	            JOptionPane.showMessageDialog(delegado, "Error: " + ex.getMessage());
 	        }
 	    }
 	}
@@ -460,10 +470,17 @@ public class logica_ventana implements ActionListener, ListSelectionListener, It
 	    if (!enModoEdicion) {
 	        int fila = delegado.tabla_contactos.getSelectedRow();
 	        if (fila >= 0) {
-	            cargarContactoDesdeTabla();
-	            enModoEdicion = true;
-	            filaPendienteDeModificar = fila;
-	            delegado.btn_modificar.setText(Idiomas.obtener("btn.guardar"));
+	            String nombreContacto = delegado.tabla_contactos.getValueAt(fila, 0).toString();
+
+	            // Intentar bloquear el contacto
+	            if (GestorBloqueos.bloquearContacto(nombreContacto)) {
+	                cargarContactoDesdeTabla();
+	                enModoEdicion = true;
+	                filaPendienteDeModificar = fila;
+	                delegado.btn_modificar.setText(Idiomas.obtener("btn.guardar"));
+	            } else {
+	                JOptionPane.showMessageDialog(delegado, "Este contacto ya esta siendo editado");
+	            }
 	        } else {
 	            JOptionPane.showMessageDialog(delegado, "Seleccione un contacto de la tabla para modificar");
 	        }
@@ -474,28 +491,31 @@ public class logica_ventana implements ActionListener, ListSelectionListener, It
 	            if ((!categoria.equals("Elija una Categoria")) && (!categoria.equals(""))) {
 	                String nombreOriginal = delegado.tabla_contactos.getValueAt(filaPendienteDeModificar, 0).toString();
 
-	                for (int i = 0; i < contactos.size(); i++) {
-	                    if (contactos.get(i).getNombre().equals(nombreOriginal)) {
-	                        contactos.get(i).setNombre(nombres);
-	                        contactos.get(i).setTelefono(telefono);
-	                        contactos.get(i).setEmail(email);
-	                        contactos.get(i).setCategoria(categoria);
-	                        contactos.get(i).setFavorito(favorito);
-	                        break;
+	                synchronized(contactos) {
+	                    for (int i = 0; i < contactos.size(); i++) {
+	                        if (contactos.get(i).getNombre().equals(nombreOriginal)) {
+	                            contactos.get(i).setNombre(nombres);
+	                            contactos.get(i).setTelefono(telefono);
+	                            contactos.get(i).setEmail(email);
+	                            contactos.get(i).setCategoria(categoria);
+	                            contactos.get(i).setFavorito(favorito);
+	                            break;
+	                        }
 	                    }
 	                }
 
 	                try {
 	                    new personaDAO(new persona()).actualizarContactos(contactos);
+	                    GestorBloqueos.desbloquearContacto(nombreOriginal);
 	                    enModoEdicion = false;
 	                    filaPendienteDeModificar = -1;
 	                    delegado.btn_modificar.setText(Idiomas.obtener("btn.modificar"));
 	                    limpiarCampos();
 	                    cargarTabla();
 	                    actualizarEstadisticas();
-	                    JOptionPane.showMessageDialog(delegado, "Contacto modificado correctamente");
+	                    notificador.notificacionExito("Exito", "Contacto modificado");
 	                } catch (IOException ex) {
-	                    JOptionPane.showMessageDialog(delegado, "Error al modificar el contacto: " + ex.getMessage());
+	                    JOptionPane.showMessageDialog(delegado, "Error: " + ex.getMessage());
 	                }
 	            } else {
 	                JOptionPane.showMessageDialog(delegado, "Elija una Categoria!!!");
