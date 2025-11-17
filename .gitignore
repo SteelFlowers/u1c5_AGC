@@ -2,3 +2,12 @@
 /.settings/
 .classpath
 .project
+.json
+*.class
+/modelo/
+/controlador/
+/vista/
+/idiomas/
+
+.idea/
+*.iml
